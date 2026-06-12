@@ -3,6 +3,7 @@ package com.example.movie.service.impl;
 import com.example.movie.dto.request.UserRequestDto;
 import com.example.movie.dto.response.UserResponseDto;
 import com.example.movie.entity.User;
+import com.example.movie.jwt.JwtUtil;
 import com.example.movie.repository.UserRepository;
 import com.example.movie.service.UserService;
 import lombok.RequiredArgsConstructor;
