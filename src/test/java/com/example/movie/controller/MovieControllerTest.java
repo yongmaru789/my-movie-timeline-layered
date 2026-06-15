@@ -1,4 +1,153 @@
 package com.example.movie.controller;
 
-public class MovieControllerTest {
+import com.example.movie.dto.request.MovieRequestDto;
+import com.example.movie.dto.response.MovieResponseDto;
+import com.example.movie.jwt.JwtUtil;
+import com.example.movie.security.SecurityConfig;
+import com.example.movie.service.MovieService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(MovieController.class)
+@Import(SecurityConfig.class)
+class MovieControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private MovieService movieService;
+
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
+    private String token;
+    private MovieResponseDto movieResponseDto;
+
+    @BeforeEach
+    void setUp() {
+        token = "test-token";
+
+        given(jwtUtil.validateToken(token)).willReturn(true);
+        given(jwtUtil.extractUsername(token)).willReturn("testuser");
+
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken("testuser", null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        movieResponseDto = new MovieResponseDto();
+        movieResponseDto.setId(1L);
+        movieResponseDto.setTitle("인터스텔라");
+        movieResponseDto.setRating(4.5);
+        movieResponseDto.setDate("2024-01-01");
+        movieResponseDto.setUserId("1");
+        movieResponseDto.setGenres(List.of("SF", "드라마"));
+    }
+
+    @Test
+    @DisplayName("영화 등록 API 성공")
+    void addMovie_success() throws Exception {
+        // Given
+        MovieRequestDto request = new MovieRequestDto();
+        request.setTitle("인터스텔라");
+        request.setRating(4.5);
+        request.setDate("2024-01-01");
+        request.setUserId("1");
+        request.setGenres(List.of("SF", "드라마"));
+
+        given(movieService.addMovie(any(MovieRequestDto.class)))
+                .willReturn(movieResponseDto);
+
+        // When & Then
+        mockMvc.perform(post("/api/movies")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.title").value("인터스텔라"))
+                .andExpect(jsonPath("$.data.rating").value(4.5));
+    }
+
+    @Test
+    @DisplayName("영화 목록 조회 API 성공")
+    void getMovies_success() throws Exception {
+        // Given
+        Page<MovieResponseDto> page = new PageImpl<>(List.of(movieResponseDto));
+        given(movieService.getMoviesByUserId(eq("1"), any(Pageable.class)))
+                .willReturn(page);
+
+        // When & Then
+        mockMvc.perform(get("/api/movies")
+                        .header("Authorization", "Bearer " + token)
+                        .param("userId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].title").value("인터스텔라"));
+    }
+
+    @Test
+    @DisplayName("영화 수정 API 성공")
+    void updateMovie_success() throws Exception {
+        // Given
+        MovieRequestDto request = new MovieRequestDto();
+        request.setTitle("인터스텔라 수정");
+        request.setRating(5.0);
+
+        MovieResponseDto updatedResponse = new MovieResponseDto();
+        updatedResponse.setId(1L);
+        updatedResponse.setTitle("인터스텔라 수정");
+        updatedResponse.setRating(5.0);
+
+        given(movieService.updateMovie(eq(1L), any(MovieRequestDto.class)))
+                .willReturn(updatedResponse);
+
+        // When & Then
+        mockMvc.perform(put("/api/movies/1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.title").value("인터스텔라 수정"))
+                .andExpect(jsonPath("$.data.rating").value(5.0));
+    }
+
+    @Test
+    @DisplayName("영화 삭제 API 성공")
+    void deleteMovie_success() throws Exception {
+        // Given
+        doNothing().when(movieService).deleteMovie(1L);
+
+        // When & Then
+        mockMvc.perform(delete("/api/movies/1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }
