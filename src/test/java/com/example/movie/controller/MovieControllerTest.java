@@ -2,9 +2,11 @@ package com.example.movie.controller;
 
 import com.example.movie.dto.request.MovieRequestDto;
 import com.example.movie.dto.response.MovieResponseDto;
+import com.example.movie.dto.response.UserResponseDto;
 import com.example.movie.jwt.JwtUtil;
 import com.example.movie.security.SecurityConfig;
 import com.example.movie.service.MovieService;
+import com.example.movie.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +48,9 @@ class MovieControllerTest {
     @MockitoBean
     private JwtUtil jwtUtil;
 
+    @MockitoBean
+    private UserService userService;
+
     private String token;
     private MovieResponseDto movieResponseDto;
 
@@ -59,6 +64,11 @@ class MovieControllerTest {
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken("testuser", null, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
+
+        UserResponseDto userResponseDto = new UserResponseDto();
+        userResponseDto.setId(1L);
+        userResponseDto.setUsername("testuser");
+        given(userService.findByUsername("testuser")).willReturn(userResponseDto);
 
         movieResponseDto = new MovieResponseDto();
         movieResponseDto.setId(1L);
@@ -104,8 +114,7 @@ class MovieControllerTest {
 
         // When & Then
         mockMvc.perform(get("/api/movies")
-                        .header("Authorization", "Bearer " + token)
-                        .param("userId", "1"))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content[0].title").value("인터스텔라"));
