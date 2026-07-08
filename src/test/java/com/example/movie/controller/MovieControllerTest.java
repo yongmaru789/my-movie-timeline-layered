@@ -90,7 +90,7 @@ class MovieControllerTest {
         request.setUserId("1");
         request.setGenres(List.of("SF", "드라마"));
 
-        given(movieService.addMovie(any(MovieRequestDto.class)))
+        given(movieService.addMovie(any(MovieRequestDto.class), eq("1")))
                 .willReturn(movieResponseDto);
 
         // When & Then
@@ -133,7 +133,7 @@ class MovieControllerTest {
         updatedResponse.setTitle("인터스텔라 수정");
         updatedResponse.setRating(5.0);
 
-        given(movieService.updateMovie(eq(1L), any(MovieRequestDto.class)))
+        given(movieService.updateMovie(eq(1L), any(MovieRequestDto.class), eq("1")))
                 .willReturn(updatedResponse);
 
         // When & Then
@@ -151,7 +151,7 @@ class MovieControllerTest {
     @DisplayName("영화 삭제 API 성공")
     void deleteMovie_success() throws Exception {
         // Given
-        doNothing().when(movieService).deleteMovie(1L);
+        doNothing().when(movieService).deleteMovie(1L, "1");
 
         // When & Then
         mockMvc.perform(delete("/api/movies/1")

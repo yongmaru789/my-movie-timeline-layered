@@ -24,21 +24,22 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieResponseDto addMovie(MovieRequestDto request) {
+    public MovieResponseDto addMovie(MovieRequestDto request, String userId) {
         Movie movie = new Movie();
         movie.setTitle(request.getTitle());
         movie.setRating(request.getRating());
         movie.setDate(request.getDate());
         movie.setPoster(request.getPoster());
-        movie.setUserId(request.getUserId());
+        movie.setUserId(userId);
         movie.setTmdbId(request.getTmdbId());
         movie.setGenres(request.getGenres());
         return MovieResponseDto.from(movieRepository.save(movie));
     }
 
     @Override
-    public MovieResponseDto updateMovie(Long id, MovieRequestDto request) {
+    public MovieResponseDto updateMovie(Long id, MovieRequestDto request, String userId) {
         Movie movie = movieRepository.findById(id)
+                .filter(m -> m.getUserId().equals(userId))
                 .orElseThrow(() -> new MovieNotFoundException(id));
         movie.setTitle(request.getTitle());
         movie.setRating(request.getRating());
@@ -49,10 +50,10 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public void deleteMovie(Long id) {
-        if (!movieRepository.existsById(id)) {
-            throw new MovieNotFoundException(id);
-        }
-        movieRepository.deleteById(id);
+    public void deleteMovie(Long id, String userId) {
+        Movie movie = movieRepository.findById(id)
+                .filter(m -> m.getUserId().equals(userId))
+                .orElseThrow(() -> new MovieNotFoundException(id));
+        movieRepository.delete(movie);
     }
 }

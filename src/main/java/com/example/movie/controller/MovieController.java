@@ -28,30 +28,34 @@ public class MovieController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "date") String sortBy,
             @RequestParam(defaultValue = "desc") String direction) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserResponseDto user = userService.findByUsername(username);
         Sort sort = direction.equals("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ApiResponse.ok(movieService.getMoviesByUserId(String.valueOf(user.getId()), pageable));
+        return ApiResponse.ok(movieService.getMoviesByUserId(resolveUserId(), pageable));
     }
 
     @PostMapping
     public ApiResponse<MovieResponseDto> addMovie(@RequestBody MovieRequestDto request) {
-        return ApiResponse.ok(movieService.addMovie(request));
+        return ApiResponse.ok(movieService.addMovie(request, resolveUserId()));
     }
 
     @PutMapping("/{id}")
     public ApiResponse<MovieResponseDto> updateMovie(
             @PathVariable Long id,
             @RequestBody MovieRequestDto request) {
-        return ApiResponse.ok(movieService.updateMovie(id, request));
+        return ApiResponse.ok(movieService.updateMovie(id, request, resolveUserId()));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteMovie(@PathVariable Long id) {
-        movieService.deleteMovie(id);
+        movieService.deleteMovie(id, resolveUserId());
         return ApiResponse.ok(null);
+    }
+
+    private String resolveUserId() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserResponseDto user = userService.findByUsername(username);
+        return String.valueOf(user.getId());
     }
 }

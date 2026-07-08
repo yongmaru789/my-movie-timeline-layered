@@ -40,7 +40,6 @@ class MovieServiceTest {
         request.setTitle("인터스텔라");
         request.setRating(4.5);
         request.setDate("2024-01-01");
-        request.setUserId("1");
         request.setGenres(List.of("SF", "드라마"));
 
         Movie savedMovie = new Movie();
@@ -54,7 +53,7 @@ class MovieServiceTest {
         given(movieRepository.save(any(Movie.class))).willReturn(savedMovie);
 
         // When
-        MovieResponseDto result = movieService.addMovie(request);
+        MovieResponseDto result = movieService.addMovie(request, "1");
 
         // Then
         assertThat(result.getTitle()).isEqualTo("인터스텔라");
@@ -71,6 +70,7 @@ class MovieServiceTest {
         existingMovie.setId(1L);
         existingMovie.setTitle("인터스텔라");
         existingMovie.setRating(4.5);
+        existingMovie.setUserId("1");
 
         MovieRequestDto request = new MovieRequestDto();
         request.setTitle("인터스텔라 수정");
@@ -85,7 +85,7 @@ class MovieServiceTest {
         given(movieRepository.save(any(Movie.class))).willReturn(updatedMovie);
 
         // When
-        MovieResponseDto result = movieService.updateMovie(1L, request);
+        MovieResponseDto result = movieService.updateMovie(1L, request, "1");
 
         // Then
         assertThat(result.getTitle()).isEqualTo("인터스텔라 수정");
@@ -102,33 +102,70 @@ class MovieServiceTest {
         given(movieRepository.findById(999L)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> movieService.updateMovie(999L, request))
+        assertThatThrownBy(() -> movieService.updateMovie(999L, request, "1"))
                 .isInstanceOf(MovieNotFoundException.class)
                 .hasMessageContaining("999");
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 영화 수정 시도 시 예외 발생")
+    void updateMovie_notOwner() {
+        // Given
+        Movie existingMovie = new Movie();
+        existingMovie.setId(1L);
+        existingMovie.setUserId("1");
+
+        MovieRequestDto request = new MovieRequestDto();
+        request.setTitle("인터스텔라 수정");
+
+        given(movieRepository.findById(1L)).willReturn(Optional.of(existingMovie));
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.updateMovie(1L, request, "2"))
+                .isInstanceOf(MovieNotFoundException.class);
     }
 
     @Test
     @DisplayName("영화 삭제 성공")
     void deleteMovie_success() {
         // Given
-        given(movieRepository.existsById(1L)).willReturn(true);
+        Movie existingMovie = new Movie();
+        existingMovie.setId(1L);
+        existingMovie.setUserId("1");
+
+        given(movieRepository.findById(1L)).willReturn(Optional.of(existingMovie));
 
         // When
-        movieService.deleteMovie(1L);
+        movieService.deleteMovie(1L, "1");
 
         // Then
-        verify(movieRepository, times(1)).deleteById(1L);
+        verify(movieRepository, times(1)).delete(existingMovie);
     }
 
     @Test
     @DisplayName("존재하지 않는 영화 삭제 시 예외 발생")
     void deleteMovie_notFound() {
         // Given
-        given(movieRepository.existsById(999L)).willReturn(false);
+        given(movieRepository.findById(999L)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> movieService.deleteMovie(999L))
+        assertThatThrownBy(() -> movieService.deleteMovie(999L, "1"))
                 .isInstanceOf(MovieNotFoundException.class)
                 .hasMessageContaining("999");
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 영화 삭제 시도 시 예외 발생")
+    void deleteMovie_notOwner() {
+        // Given
+        Movie existingMovie = new Movie();
+        existingMovie.setId(1L);
+        existingMovie.setUserId("1");
+
+        given(movieRepository.findById(1L)).willReturn(Optional.of(existingMovie));
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.deleteMovie(1L, "2"))
+                .isInstanceOf(MovieNotFoundException.class);
     }
 }
