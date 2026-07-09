@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
@@ -65,14 +66,14 @@ class AuthControllerTest {
         request.setPassword("password");
 
         given(userService.login(any(UserRequestDto.class)))
-                .willThrow(new InvalidCredentialsException("존재하지 않는 아이디입니다."));
+                .willThrow(new InvalidCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error").value("존재하지 않는 아이디입니다."));
+                .andExpect(jsonPath("$.error").value("아이디 또는 비밀번호가 올바르지 않습니다."));
     }
 
     @Test
@@ -83,13 +84,39 @@ class AuthControllerTest {
         request.setPassword("wrong-password");
 
         given(userService.login(any(UserRequestDto.class)))
-                .willThrow(new InvalidCredentialsException("비밀번호가 틀렸습니다."));
+                .willThrow(new InvalidCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error").value("비밀번호가 틀렸습니다."));
+                .andExpect(jsonPath("$.error").value("아이디 또는 비밀번호가 올바르지 않습니다."));
+    }
+
+    @Test
+    @DisplayName("아이디가 없을 때와 비밀번호가 틀렸을 때 응답 메시지가 동일하다 (계정 존재 여부 노출 방지)")
+    void login_failureMessagesAreIndistinguishable() throws Exception {
+        UserRequestDto request = new UserRequestDto();
+        request.setUsername("someone");
+        request.setPassword("password");
+
+        given(userService.login(any(UserRequestDto.class)))
+                .willThrow(new InvalidCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다."))
+                .willThrow(new InvalidCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다."));
+
+        String userNotFoundBody = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString();
+
+        String wrongPasswordBody = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(userNotFoundBody).isEqualTo(wrongPasswordBody);
     }
 }

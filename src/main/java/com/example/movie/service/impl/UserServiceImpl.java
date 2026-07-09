@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final String LOGIN_FAILED_MESSAGE = "아이디 또는 비밀번호가 올바르지 않습니다.";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -34,9 +36,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public String login(UserRequestDto request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new InvalidCredentialsException("존재하지 않는 아이디입니다."));
+                .orElseThrow(() -> new InvalidCredentialsException(LOGIN_FAILED_MESSAGE));
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new InvalidCredentialsException("비밀번호가 틀렸습니다.");
+            throw new InvalidCredentialsException(LOGIN_FAILED_MESSAGE);
         }
         return jwtUtil.generateToken(request.getUsername());
     }
