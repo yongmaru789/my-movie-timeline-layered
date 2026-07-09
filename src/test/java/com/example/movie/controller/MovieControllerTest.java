@@ -131,6 +131,16 @@ class MovieControllerTest {
     }
 
     @Test
+    @DisplayName("CORS preflight(OPTIONS) 요청은 인증 없이도 허용된다")
+    void preflightRequest_isAllowedWithoutAuthentication() throws Exception {
+        mockMvc.perform(options("/api/movies")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+    }
+
+    @Test
     @DisplayName("영화 수정 API 성공")
     void updateMovie_success() throws Exception {
         // Given
