@@ -3,6 +3,8 @@ package com.example.movie.service.impl;
 import com.example.movie.dto.request.UserRequestDto;
 import com.example.movie.dto.response.UserResponseDto;
 import com.example.movie.entity.User;
+import com.example.movie.exception.DuplicateUsernameException;
+import com.example.movie.exception.InvalidCredentialsException;
 import com.example.movie.jwt.JwtUtil;
 import com.example.movie.repository.UserRepository;
 import com.example.movie.service.UserService;
@@ -21,7 +23,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void register(UserRequestDto request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("이미 존재하는 아이디입니다.");
+            throw new DuplicateUsernameException("이미 존재하는 아이디입니다.");
         }
         User user = new User();
         user.setUsername(request.getUsername());
@@ -32,9 +34,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public String login(UserRequestDto request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 아이디입니다."));
+                .orElseThrow(() -> new InvalidCredentialsException("존재하지 않는 아이디입니다."));
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("비밀번호가 틀렸습니다.");
+            throw new InvalidCredentialsException("비밀번호가 틀렸습니다.");
         }
         return jwtUtil.generateToken(request.getUsername());
     }
@@ -42,7 +44,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponseDto findByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 아이디입니다."));
+                .orElseThrow(() -> new InvalidCredentialsException("존재하지 않는 아이디입니다."));
         return UserResponseDto.from(user);
     }
 }

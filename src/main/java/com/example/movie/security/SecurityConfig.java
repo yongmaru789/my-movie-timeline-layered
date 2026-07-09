@@ -2,6 +2,7 @@ package com.example.movie.security;
 
 import com.example.movie.jwt.JwtFilter;
 import com.example.movie.jwt.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -34,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/health").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtFilter(jwtUtil),
+                .addFilterBefore(new JwtFilter(jwtUtil, objectMapper),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

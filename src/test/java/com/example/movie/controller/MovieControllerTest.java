@@ -121,6 +121,16 @@ class MovieControllerTest {
     }
 
     @Test
+    @DisplayName("인증 토큰 없이 요청하면 JSON 형식의 401 응답을 받는다")
+    void getMovies_withoutToken_returnsJsonUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/movies"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").value("토큰이 없습니다."));
+    }
+
+    @Test
     @DisplayName("영화 수정 API 성공")
     void updateMovie_success() throws Exception {
         // Given
