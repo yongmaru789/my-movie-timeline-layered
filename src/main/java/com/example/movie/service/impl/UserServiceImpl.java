@@ -1,6 +1,7 @@
 package com.example.movie.service.impl;
 
 import com.example.movie.dto.request.UserRequestDto;
+import com.example.movie.dto.response.LoginResponseDto;
 import com.example.movie.dto.response.UserResponseDto;
 import com.example.movie.entity.User;
 import com.example.movie.exception.DuplicateUsernameException;
@@ -34,13 +35,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String login(UserRequestDto request) {
+    public LoginResponseDto login(UserRequestDto request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new InvalidCredentialsException(LOGIN_FAILED_MESSAGE));
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException(LOGIN_FAILED_MESSAGE);
         }
-        return jwtUtil.generateToken(request.getUsername());
+        String token = jwtUtil.generateToken(request.getUsername());
+        return LoginResponseDto.of(token, user);
     }
 
     @Override

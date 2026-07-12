@@ -1,6 +1,7 @@
 package com.example.movie.controller;
 
 import com.example.movie.dto.request.UserRequestDto;
+import com.example.movie.dto.response.LoginResponseDto;
 import com.example.movie.exception.DuplicateUsernameException;
 import com.example.movie.exception.InvalidCredentialsException;
 import com.example.movie.jwt.JwtUtil;
@@ -56,6 +57,30 @@ class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error").value("이미 존재하는 아이디입니다."));
+    }
+
+    @Test
+    @DisplayName("로그인 성공 시 토큰과 사용자 정보를 반환한다")
+    void login_success_returnsTokenAndUserInfo() throws Exception {
+        UserRequestDto request = new UserRequestDto();
+        request.setUsername("testuser");
+        request.setPassword("password");
+
+        LoginResponseDto loginResponse = new LoginResponseDto();
+        loginResponse.setToken("test-jwt-token");
+        loginResponse.setUserId(1L);
+        loginResponse.setUsername("testuser");
+
+        given(userService.login(any(UserRequestDto.class))).willReturn(loginResponse);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.token").value("test-jwt-token"))
+                .andExpect(jsonPath("$.data.userId").value(1))
+                .andExpect(jsonPath("$.data.username").value("testuser"));
     }
 
     @Test

@@ -2,13 +2,11 @@ package com.example.movie.controller;
 
 import com.example.movie.common.ApiResponse;
 import com.example.movie.dto.request.UserRequestDto;
-import com.example.movie.dto.response.UserResponseDto;
+import com.example.movie.dto.response.LoginResponseDto;
 import com.example.movie.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,13 +22,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<Map<String, Object>> login(@RequestBody @Valid UserRequestDto request) {
-        String token = userService.login(request);
-        UserResponseDto user = userService.findByUsername(request.getUsername());
-        return ApiResponse.ok(Map.of(
-                "token", token,
-                "userId", user.getId(),
-                "username", user.getUsername()
-        ));
+    public ApiResponse<LoginResponseDto> login(@RequestBody @Valid UserRequestDto request) {
+        return ApiResponse.ok(userService.login(request));
     }
 }
