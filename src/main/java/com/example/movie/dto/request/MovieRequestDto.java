@@ -21,7 +21,6 @@ public class MovieRequestDto {
     private String date;
 
     private String poster;
-    private String userId;
     private Long tmdbId;
     private List<String> genres;
 }

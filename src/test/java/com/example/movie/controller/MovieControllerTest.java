@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -25,10 +26,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -87,7 +90,6 @@ class MovieControllerTest {
         request.setTitle("인터스텔라");
         request.setRating(4.5);
         request.setDate("2024-01-01");
-        request.setUserId("1");
         request.setGenres(List.of("SF", "드라마"));
 
         given(movieService.addMovie(any(MovieRequestDto.class), eq("1")))
@@ -137,6 +139,26 @@ class MovieControllerTest {
     }
 
     @Test
+    @DisplayName("size가 상한(100)을 넘으면 최대값으로 제한된다")
+    void getMovies_sizeExceedsLimit_isClampedToMax() throws Exception {
+        // Given
+        Page<MovieResponseDto> page = new PageImpl<>(List.of(movieResponseDto));
+        given(movieService.getMoviesByUserId(eq("1"), any(Pageable.class)))
+                .willReturn(page);
+
+        // When
+        mockMvc.perform(get("/api/movies")
+                        .header("Authorization", "Bearer " + token)
+                        .param("size", "9999"))
+                .andExpect(status().isOk());
+
+        // Then
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(movieService).getMoviesByUserId(eq("1"), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
+    }
+
+    @Test
     @DisplayName("인증 토큰 없이 요청하면 JSON 형식의 401 응답을 받는다")
     void getMovies_withoutToken_returnsJsonUnauthorized() throws Exception {
         mockMvc.perform(get("/api/movies"))
@@ -163,6 +185,7 @@ class MovieControllerTest {
         MovieRequestDto request = new MovieRequestDto();
         request.setTitle("인터스텔라 수정");
         request.setRating(5.0);
+        request.setDate("2024-01-01");
 
         MovieResponseDto updatedResponse = new MovieResponseDto();
         updatedResponse.setId(1L);

@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class MovieController {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final MovieService movieService;
     private final UserService userService;
 
@@ -32,7 +34,7 @@ public class MovieController {
         Sort sort = direction.equals("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE), sort);
         return ApiResponse.ok(movieService.getMoviesByUserId(resolveUserId(), pageable));
     }
 
