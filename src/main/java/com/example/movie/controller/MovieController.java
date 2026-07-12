@@ -6,6 +6,7 @@ import com.example.movie.dto.response.MovieResponseDto;
 import com.example.movie.dto.response.UserResponseDto;
 import com.example.movie.service.MovieService;
 import com.example.movie.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,14 +37,14 @@ public class MovieController {
     }
 
     @PostMapping
-    public ApiResponse<MovieResponseDto> addMovie(@RequestBody MovieRequestDto request) {
+    public ApiResponse<MovieResponseDto> addMovie(@RequestBody @Valid MovieRequestDto request) {
         return ApiResponse.ok(movieService.addMovie(request, resolveUserId()));
     }
 
     @PutMapping("/{id}")
     public ApiResponse<MovieResponseDto> updateMovie(
             @PathVariable Long id,
-            @RequestBody MovieRequestDto request) {
+            @RequestBody @Valid MovieRequestDto request) {
         return ApiResponse.ok(movieService.updateMovie(id, request, resolveUserId()));
     }
 

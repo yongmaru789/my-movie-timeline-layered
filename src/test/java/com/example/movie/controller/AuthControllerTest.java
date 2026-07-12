@@ -119,4 +119,32 @@ class AuthControllerTest {
 
         assertThat(userNotFoundBody).isEqualTo(wrongPasswordBody);
     }
+
+    @Test
+    @DisplayName("아이디를 비워서 회원가입하면 400 응답")
+    void register_blankUsername_returns400() throws Exception {
+        UserRequestDto request = new UserRequestDto();
+        request.setUsername("");
+        request.setPassword("password");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("비밀번호가 너무 짧으면 400 응답")
+    void register_shortPassword_returns400() throws Exception {
+        UserRequestDto request = new UserRequestDto();
+        request.setUsername("testuser");
+        request.setPassword("123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
 }

@@ -105,6 +105,22 @@ class MovieControllerTest {
     }
 
     @Test
+    @DisplayName("제목 없이 영화를 등록하면 400 응답")
+    void addMovie_blankTitle_returns400() throws Exception {
+        MovieRequestDto request = new MovieRequestDto();
+        request.setTitle("");
+        request.setRating(4.5);
+        request.setDate("2024-01-01");
+
+        mockMvc.perform(post("/api/movies")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
     @DisplayName("영화 목록 조회 API 성공")
     void getMovies_success() throws Exception {
         // Given
